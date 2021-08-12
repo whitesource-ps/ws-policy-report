@@ -37,8 +37,8 @@ jobs:
 #        run: python -m unittest
       - name: Full Test
         env:
-          WSPR_USER_KEY: '${{ secrets.WSPR_USER_KEY }}'
-          WSPR_ORG_TOKEN: '${{ secrets.WSPR_ORG_TOKEN }}'
+          WSPR_USER_KEY: ${{ secrets.WSPR_USER_KEY }}
+          WSPR_ORG_TOKEN: ${{ secrets.WSPR_ORG_TOKEN }}
         run: python ./policy_report/ws_policy_report.py -c ./policy_report/params_ci.config
       - name: Zip release
         uses: papeloto/action-zip@v1
