@@ -33,4 +33,7 @@ jobs:
 #      - name: Unittesting
 #        run: python -m unittest
       - name: Full Test
-        run: python ./policy_report/ws_policy_report.py -c ./policy_report/params_ci.config ${{ secrets.WSPR_USER_KEY }} ${{ secrets.WSPR_ORG_TOKEN }}
+        env:
+          WSPR_USER_KEY: ${{ secrets.WSPR_USER_KEY }}
+          WSPR_ORG_TOKEN: ${{ secrets.WSPR_ORG_TOKEN }}
+        run: python ./policy_report/ws_policy_report.py -c ./policy_report/params_ci.config "$WSPR_USER_KEY" "$WSPR_USER_KEY"
