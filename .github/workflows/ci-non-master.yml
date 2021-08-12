@@ -32,8 +32,8 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 #      - name: Unittesting
 #        run: python -m unittest
-      - name: Full Test
-        env:
-          WSPR_USER_KEY: ${{ secrets.WSPR_USER_KEY }}
-          WSPR_ORG_TOKEN: ${{ secrets.WSPR_ORG_TOKEN }}
-        run: python ./policy_report/ws_policy_report.py -u https://app.whitesourcesoftware.com -k "$WSPR_USER_KEY" -t "$WSPR_ORG_TOKEN" -m 18
+#      - name: Full Test
+#        env:
+#          WSPR_USER_KEY: ${{ secrets.WSPR_USER_KEY }}
+#          WSPR_ORG_TOKEN: ${{ secrets.WSPR_ORG_TOKEN }}
+#        run: python ./policy_report/ws_policy_report.py -u https://app.whitesourcesoftware.com -k "$WSPR_USER_KEY" -t "$WSPR_ORG_TOKEN" -m 18
