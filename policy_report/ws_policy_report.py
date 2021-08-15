@@ -25,7 +25,9 @@ WSPR_ENV_VARS = [WSPR_PREFIX + sub for sub in ('WS_URL', 'USER_KEY', 'ORG_TOKEN'
 
 agent_info = "agentInfo"
 agent_name = "ws_policy_report"
-agent_info_details = {"agent": agent_name}
+agent_version = "0.1.0"
+
+agent_info_details = {"agent": agent_name, "agentVersion": agent_version}
 
 REQUEST_TYPE = "requestType"
 USER_KEY = "userKey"
@@ -292,7 +294,7 @@ def create_excel_report(data):
         worksheet.set_column(f'{entity_column}:{entity_column}', entity_column_width, body_cell_format)
         worksheet.set_column(f'{policies_column}:{policies_column}', policies_column_width, body_cell_format)
 
-    # Read an Whitesource logo image from a remote url.
+    # Read an WhiteSource logo image from a remote url.
     try:
         image_data = BytesIO(urlopen(WS_LOGO_URL).read())
     except HTTPError as e:
