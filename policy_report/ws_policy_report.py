@@ -24,10 +24,10 @@ WSPR_PREFIX = 'WSPR_'
 WSPR_ENV_VARS = [WSPR_PREFIX + sub for sub in ('WS_URL', 'USER_KEY', 'ORG_TOKEN', 'PROJECT_PARALLELISM_LEVEL')]
 
 agent_info = "agentInfo"
-AGENT_NAME = "ps-policy-report"
+AGENT_NAME = "policy-report"
 AGENT_VERSION = "0.1.0"
 
-agent_info_details = {"agent": AGENT_NAME, "agentVersion": AGENT_VERSION}
+agent_info_details = {"agent": "ps-"+AGENT_NAME, "agentVersion": AGENT_VERSION}
 
 REQUEST_TYPE = "requestType"
 USER_KEY = "userKey"
