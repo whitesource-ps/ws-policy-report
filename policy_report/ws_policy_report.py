@@ -17,32 +17,39 @@ import xlsxwriter
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(thread)d: %(message)s', stream=sys.stdout)
 
-DEFAULT_CONFIG_FILE = './policy_report/params.config'
+DEFAULT_CONFIG_FILE = 'params.config'
 CONFIG_FILE_HEADER_NAME = 'DEFAULT'
 
 WSPR_PREFIX = 'WSPR_'
 WSPR_ENV_VARS = [WSPR_PREFIX + sub for sub in ('WS_URL', 'USER_KEY', 'ORG_TOKEN', 'PROJECT_PARALLELISM_LEVEL')]
 
-agent_info = "agentInfo"
-PS = "ps-"
-AGENT_NAME = "policy-report"
-AGENT_VERSION = "0.1.0"
+agent_info = 'agentInfo'
+PS = 'ps-'
+AGENT_NAME = 'policy-report'
+AGENT_VERSION = '0.1.0'
 
-agent_info_details = {"agent": PS + AGENT_NAME, "agentVersion": AGENT_VERSION}
+agent_info_details = {'agent': PS + AGENT_NAME, 'agentVersion': AGENT_VERSION}
 
-REQUEST_TYPE = "requestType"
-USER_KEY = "userKey"
-PROJECT_TOKEN = "projectToken"
-PRODUCT_TOKEN = "productToken"
-ORG_TOKEN = "orgToken"
-api_version = "/api/v1.3"
+get_product_project_details = 'getProductProjectVitals'
+get_org_details = 'getOrganizationDetails'
+get_org_product_vitals = 'getOrganizationProductVitals'
+get_org_project_vitals = 'getOrganizationProjectVitals'
+get_project_policies = 'getProjectPolicies'
+aggregate_policies = 'aggregatePolicies'
 
+REQUEST_TYPE = 'requestType'
+USER_KEY = 'userKey'
+PROJECT_TOKEN = 'projectToken'
+PRODUCT_TOKEN = 'productToken'
+ORG_TOKEN = 'orgToken'
+api_version = '/api/v1.3'
+WS_URL = 'wsUrl'
 config = dict()
 org_name_for_excel_output = ''
-
-PROJECT_PARALLELISM_LEVEL_MAX = 20
-PROJECT_PARALLELISM_LEVEL_DEFAULT = 9
-PROJECT_PARALLELISM_LEVEL_RANGE = list(range(1, PROJECT_PARALLELISM_LEVEL_MAX + 1))
+PROJECT_PARALLELISM_LEVEL = 'projectParallelismLevel'
+PROJECT_PARALLELISM_LEVEL_MAX_VALUE = 20
+PROJECT_PARALLELISM_LEVEL_DEFAULT_VALUE = 9
+PROJECT_PARALLELISM_LEVEL_RANGE = list(range(1, PROJECT_PARALLELISM_LEVEL_MAX_VALUE + 1))
 
 WS_LOGO_URL = 'https://whitesource-resources.s3.amazonaws.com/ws-sig-images/Whitesource_Logo_178x44.png'
 
@@ -59,15 +66,15 @@ class Row:
 
 def get_org_projects_polices_aggregated_data():
     # 1. Retrieve org name
-    org_details = get_organization_details(config['user_key'], config['org_token'])
+    org_details = post_request(get_org_details, ORG_TOKEN, config['org_token'], {})
     org_name = org_details['orgName']
 
     # 2. Retrieve product tokens and names
-    org_products_vitals = get_organization_product_vitals(config['user_key'], config['org_token'])
+    org_products_vitals = post_request(get_org_product_vitals, ORG_TOKEN, config['org_token'], {})
     products_tokens_and_products_names = get_scope_tokens_and_name_from_vitals(org_products_vitals)
 
     # 3. Retrieve project tokens and names
-    org_projects_vitals = get_organization_project_vitals(config['user_key'], config['org_token'])
+    org_projects_vitals = post_request(get_org_project_vitals, ORG_TOKEN, config['org_token'], {})
     projects_tokens_and_projects_names = get_scope_tokens_and_name_from_vitals(org_projects_vitals)
 
     # 4. Map projects tokens and its parent product name
@@ -84,7 +91,7 @@ def get_products_names_and_projects(products_tokens_and_products_names):
     products_names_and_projects = {}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=int(config['project_parallelism_level'])) as executor:
-        response = {executor.submit(get_product_project_vitals, config['user_key'], product_token): product_name for product_token, product_name in products_tokens_and_products_names.items()}
+        response = {executor.submit(get_product_project_vitals, product_token): product_name for product_token, product_name in products_tokens_and_products_names.items()}
 
         for future in concurrent.futures.as_completed(response):
             key = response[future]
@@ -105,7 +112,7 @@ def get_projects_tokens_products_names(products_names_and_projects):
 def get_policies(org_projects_vitals):
     policies = []
     with ThreadPoolExecutor(max_workers=int(config['project_parallelism_level'])) as executor:
-        response = {executor.submit(get_org_projects_policies_aggregated, config['user_key'], project['token'], project['name']): [project['token'], project['name']] for project in org_projects_vitals['projectVitals']}
+        response = {executor.submit(get_org_projects_policies_aggregated, project['token'], project['name']): [project['token'], project['name']] for project in org_projects_vitals['projectVitals']}
         for future in concurrent.futures.as_completed(response):
             policies.append(future.result())
     return policies
@@ -124,12 +131,12 @@ def build_records(org_name, res_all_policies, projects_tokens_and_projects_names
 
         for policy in project_policies:
             policy_scope = policy['policyContext']
-            policy_details = policy['name'] + "(" + policy['owner']['name'] + "," + policy['owner']['email'] + "," + policy['creationTime'] + ")" + " - Status: " + ("Enabled" if policy['enabled'] else "Disabled")
-            if policy_scope == "DOMAIN":
+            policy_details = policy['name'] + '(' + policy['owner']['name'] + ',' + policy['owner']['email'] + ',' + policy['creationTime'] + ')' + ' - Status: ' + ('Enabled' if policy['enabled'] else 'Disabled')
+            if policy_scope == 'DOMAIN':
                 row_inst.org_policies.append(policy_details)
-            elif policy_scope == "PRODUCT":
+            elif policy_scope == 'PRODUCT':
                 row_inst.product_policies.append(policy_details)
-            elif policy_scope == "PROJECT":
+            elif policy_scope == 'PROJECT':
                 row_inst.project_policies.append(policy_details)
 
         row_inst_dict = vars(row_inst)
@@ -149,74 +156,27 @@ def build_records(org_name, res_all_policies, projects_tokens_and_projects_names
 
 # ================= API calls section Start =================
 
-def get_product_project_vitals(user_k, product_token):
-    request_type = REQUEST_TYPE
-    key = USER_KEY
-    token = PRODUCT_TOKEN
-    get_product_project_details = 'getProductProjectVitals'
-    body = {request_type: get_product_project_details,
-            key: user_k,
-            token: product_token}
-    response = post_request(get_product_project_details, body)
+def get_product_project_vitals(product_token):
+    response = post_request(get_product_project_details, PRODUCT_TOKEN, product_token, {})
     return response
 
 
-def get_organization_details(user_k, org_tok):
-    request_type = REQUEST_TYPE
-    key = USER_KEY
-    token = ORG_TOKEN
-    get_org_details = 'getOrganizationDetails'
-    body = {request_type: get_org_details,
-            key: user_k,
-            token: org_tok}
-    response = post_request(get_org_details, body)
-    return response
+def get_org_projects_policies_aggregated(project_token, project_name):
+    logging.info(f'getting aggregated policies for project token : {project_token} ,project name : {project_name}')
 
-
-def get_organization_product_vitals(user_k, org_tok):
-    request_type = REQUEST_TYPE
-    key = USER_KEY
-    token = ORG_TOKEN
-    get_org_product_vitals = 'getOrganizationProductVitals'
-    body = {request_type: get_org_product_vitals,
-            key: user_k,
-            token: org_tok}
-    response = post_request(get_org_product_vitals, body)
-    return response
-
-
-def get_organization_project_vitals(user_k, org_tok):
-    request_type = REQUEST_TYPE
-    key = USER_KEY
-    token = ORG_TOKEN
-    get_org_project_vitals = 'getOrganizationProjectVitals'
-    body = {request_type: get_org_project_vitals,
-            key: user_k,
-            token: org_tok}
-    response = post_request(get_org_project_vitals, body)
-    return response
-
-
-def get_org_projects_policies_aggregated(user_k, project_token, project_name):
-    request_type = REQUEST_TYPE
-    key = USER_KEY
-    token = PROJECT_TOKEN
-    get_project_policies = 'getProjectPolicies'
-    aggregate_policies = 'aggregatePolicies'
-    logging.info(f"getting aggregated policies for project token : {project_token} ,project name : {project_name}")
-    body = {request_type: get_project_policies,
-            key: user_k,
-            token: project_token,
-            aggregate_policies: 'true'}
-    response = post_request(get_project_policies, body)
+    response = post_request(get_project_policies, PROJECT_TOKEN, project_token, {aggregate_policies: 'true'})
     response['project_token'] = project_token
     return response
 
 
-def post_request(request_type, body):
+def post_request(request_type, token_type, token, additional_values):
     logging.debug("Using '%s' API", request_type)
     headers = {'Content-Type': 'application/json', 'Accept-Charset': 'utf-8'}
-    body.update({agent_info: agent_info_details})
+    body = {agent_info: agent_info_details,
+            REQUEST_TYPE: request_type,
+            USER_KEY: config['user_key'],
+            token_type: token}
+    body.update(additional_values)
     body2string = json.dumps(body)
     response_beta = requests.post(config['ws_url'] + api_version, data=body2string.encode('utf-8'), headers=headers)
     logging.debug("Finish using '%s' API", request_type)
@@ -227,17 +187,17 @@ def post_request(request_type, body):
 
 def check_errors_in_response(response):
     error = False
-    if "errorCode" in response:
-        logging.error("Error code: %s", response["errorCode"])
+    if 'errorCode' in response:
+        logging.error('Error code: %s', response['errorCode'])
         error = True
-    if "errorMessage" in response:
-        if "occupied" in response['errorMessage']:
+    if 'errorMessage' in response:
+        if 'occupied' in response['errorMessage']:
             error = False
         else:
-            logging.error("Error message: %s", response["errorMessage"])
+            logging.error('Error message: %s', response['errorMessage'])
             error = True
     if error:
-        logging.error("Status: FAILURE")
+        logging.error('Status: FAILURE')
         sys.exit(1)
 
 
@@ -257,9 +217,9 @@ def get_scope_tokens_and_name_from_vitals(scope_vitals):
 def create_excel_report(data):
     file_name = 'policy_report'
     xlsx = '.xlsx'
-    logging.info("Start generating policy report...")
+    logging.info('Start generating policy report...')
     now = datetime.now()
-    workbook = xlsxwriter.Workbook(file_name + now.strftime("_%Y-%m-%d_%H-%M-%S") + xlsx)
+    workbook = xlsxwriter.Workbook(file_name + now.strftime('_%Y-%m-%d_%H-%M-%S') + xlsx)
     worksheet = workbook.add_worksheet('Policies')
 
     # WorkbookFormats
@@ -273,7 +233,7 @@ def create_excel_report(data):
     header_row_number = 4
     for field in worksheet_headers:
         col = worksheet_headers.index(field)
-        field = string.capwords(field.replace("_", " "))  # remove under score and Upper case first letters
+        field = string.capwords(field.replace('_', ' '))  # remove under score and Upper case first letters
         worksheet.write(header_row_number, col, field, header_cell_format)
 
     # Create table row and insert data
@@ -306,27 +266,27 @@ def create_excel_report(data):
         worksheet.insert_image('A2', WS_LOGO_URL, {'image_data': image_data, 'x_scale': 0.8, 'y_scale': 0.8, 'object_position': 1})
 
     # Add WhiteSource description
-    worksheet.write_string(table_row + 2, 0, "Report was generated by WhiteSource Software ©", sign_cell_format)
+    worksheet.write_string(table_row + 2, 0, 'Report was generated by WhiteSource Software ©', sign_cell_format)
 
     # Report timestamp
     worksheet.write_datetime(table_row + 3, 0, now, date_format)
     workbook.close()
-    logging.info(f"Successfully generated report for the organization - {org_name_for_excel_output} at: {file_name}")
+    logging.info(f'Successfully generated report for the organization - {org_name_for_excel_output} at: {file_name}')
 
 
 def get_args(arguments) -> dict:
     """Get configuration arguments"""
 
-    logging.info("Start analyzing arguments.")
-    parser = argparse.ArgumentParser(description="policy-report parser")
+    logging.info('Start analyzing arguments.')
+    parser = argparse.ArgumentParser(description='policy-report parser')
 
-    parser.add_argument('-c', "--configFile", help="The config file", required=False, dest='conf_f')
+    parser.add_argument('-c', '--configFile', help='The config file', required=False, dest='conf_f')
     is_config_file = bool(arguments[0] in ['-c', '--configFile'])
 
-    parser.add_argument('-u', "--wsUrl", help="The organization url", required=not is_config_file, dest='ws_url')
-    parser.add_argument('-k', "--userKey", help="The admin user key", required=not is_config_file, dest='user_key')
-    parser.add_argument('-t', "--orgToken", help="The organization token", required=not is_config_file, dest='org_token')
-    parser.add_argument('-m', "--projectParallelismLevel", help="The number of threads to run with", required=not is_config_file, dest='project_parallelism_level', type=int, default=PROJECT_PARALLELISM_LEVEL_DEFAULT, choices=PROJECT_PARALLELISM_LEVEL_RANGE)
+    parser.add_argument('-u', '--' + WS_URL, help='The organization url', required=not is_config_file, dest='ws_url')
+    parser.add_argument('-k', '--' + USER_KEY, help='The admin user key', required=not is_config_file, dest='user_key')
+    parser.add_argument('-t', '--' + ORG_TOKEN, help='The organization token', required=not is_config_file, dest='org_token')
+    parser.add_argument('-m', '--' + PROJECT_PARALLELISM_LEVEL, help='The number of threads to run with', required=not is_config_file, dest='project_parallelism_level', type=int, default=PROJECT_PARALLELISM_LEVEL_DEFAULT_VALUE, choices=PROJECT_PARALLELISM_LEVEL_RANGE)
 
     args = parser.parse_args()
 
@@ -335,13 +295,13 @@ def get_args(arguments) -> dict:
         args_dict.update(get_config_parameters_from_environment_variables())
 
     elif os.path.exists(args.conf_f):
-        logging.info(f"Using {args.conf_f} , additional arguments from the CLI will be ignored")
+        logging.info(f'Using {args.conf_f} , additional arguments from the CLI will be ignored')
         args_dict = get_config_file(args.conf_f)
     else:
         logging.error("Config file doesn't exists")
         sys.exit(1)
 
-    logging.info("Finished analyzing arguments.")
+    logging.info('Finished analyzing arguments.')
     return args_dict
 
 
@@ -349,12 +309,12 @@ def get_config_file(config_file) -> dict:
     conf_file = ConfigParser()
     conf_file.read(config_file)
 
-    logging.info("Start analyzing config file.")
+    logging.info('Start analyzing config file.')
     conf_file_dict = {
         'ws_url': conf_file[CONFIG_FILE_HEADER_NAME].get('wsUrl'),
-        'user_key': conf_file[CONFIG_FILE_HEADER_NAME].get('userKey'),
-        'org_token': conf_file[CONFIG_FILE_HEADER_NAME].get('orgToken'),
-        'project_parallelism_level': conf_file[CONFIG_FILE_HEADER_NAME].getint('projectParallelismLevel', fallback=PROJECT_PARALLELISM_LEVEL_DEFAULT)
+        'user_key': conf_file[CONFIG_FILE_HEADER_NAME].get(USER_KEY),
+        'org_token': conf_file[CONFIG_FILE_HEADER_NAME].get(ORG_TOKEN),
+        'project_parallelism_level': conf_file[CONFIG_FILE_HEADER_NAME].getint(PROJECT_PARALLELISM_LEVEL, fallback=PROJECT_PARALLELISM_LEVEL_DEFAULT_VALUE)
     }
 
     check_if_config_project_parallelism_level_is_valid(conf_file_dict['project_parallelism_level'])
@@ -363,10 +323,10 @@ def get_config_file(config_file) -> dict:
 
     for key, value in conf_file_dict.items():
         if value is None:
-            logging.error(f"Please check your {key} parameter-it is missing from the config file")
+            logging.error(f'Please check your {key} parameter-it is missing from the config file')
             sys.exit(1)
 
-    logging.info("Finished analyzing the config file.")
+    logging.info('Finished analyzing the config file.')
 
     return conf_file_dict
 
@@ -376,7 +336,7 @@ def get_config_parameters_from_environment_variables() -> dict:
     wspr_env_vars_dict = {}
     for variable in WSPR_ENV_VARS:
         if variable in os_env_variables:
-            logging.info(f"found {variable} environment variable - will use its value")
+            logging.info(f'found {variable} environment variable - will use its value')
             wspr_env_vars_dict[variable[len(WSPR_PREFIX):].lower()] = os_env_variables[variable]
 
             if variable == 'WSPR_PROJECT_PARALLELISM_LEVEL':
@@ -387,7 +347,7 @@ def get_config_parameters_from_environment_variables() -> dict:
 
 def check_if_config_project_parallelism_level_is_valid(parallelism_level):
     if int(parallelism_level) not in PROJECT_PARALLELISM_LEVEL_RANGE:
-        logging.error(f"The selected projectParallelismLevel <{parallelism_level}> is not valid")
+        logging.error(f'The selected {PROJECT_PARALLELISM_LEVEL} <{parallelism_level}> is not valid')
         sys.exit(1)
 
 
@@ -398,7 +358,7 @@ def read_setup():
     args = sys.argv[1:]
     if len(args) > 0:
         config = get_args(args)
-    elif os.path.exists(DEFAULT_CONFIG_FILE):  # used when running the script an IDE same path of CONFIG_FILE (params.config)
+    elif os.path.isfile(DEFAULT_CONFIG_FILE):  # used when running the script an IDE same path of CONFIG_FILE (params.config)
         config = get_config_file(DEFAULT_CONFIG_FILE)
     else:
         config = get_config_parameters_from_environment_variables()
