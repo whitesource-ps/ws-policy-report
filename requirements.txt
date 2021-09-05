@@ -1,0 +1,4 @@
+requests~=2.25.1
+XlsxWriter~=1.4.5
+configparser~=5.0.2
+DateTime~=4.3
