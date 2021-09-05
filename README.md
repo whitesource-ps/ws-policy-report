@@ -6,7 +6,7 @@
 [![Python 3.6](https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Blue_Python_3.6%2B_Shield_Badge.svg/86px-Blue_Python_3.6%2B_Shield_Badge.svg.png)](https://www.python.org/downloads/release/python-360/)
 
 # WhiteSource Policy Report
-The script enable retrieving all policies for each project in a single WhiteSource organization.
+The script enables retrieving all policies for each project in a single WhiteSource organization.
 
 ### What does the script do?
 For each project the script will list all project's policies , it's parent product's policies and the organization polices it belongs to.
