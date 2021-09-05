@@ -51,7 +51,7 @@ The report will be presented in Excel format.
  Environment Variables:
  - A parameter name, as it is defined in the configuration file, is converted to upper case with underscore (`_`) separators, and **WSPR**_ prefix is added.
  - For example, the `fileName` parameter can be set using the `WSPR_FILE_NAME` environment variable.
- - In case an environment variable is existed, it will overrun any value which exists for the matching parameter in the command line/configuration file.
+ - In case an environment variable exists, it will overrun any value which is defined for the matching parameter in the command line/configuration file.
 
 ### Output
  An Excel file in the following format:
