@@ -9,9 +9,9 @@
 The script enables retrieving all policies for each project in a single WhiteSource organization.
 
 ### What does the script do?
-For each project the script will list all project's policies , it's parent product's policies and the organization polices it belongs to.
-In addition , it will indicate whether a policy is enabled and which are disabled.
-The report will be presented in excel format
+For each project, the script pulls all project's policies, its parent product's policies, and the organization policies this project belongs to.
+In addition, it indicates whether a policy is enabled or disabled.
+The report will be presented in Excel format.
 
 ### Supported Operating Systems
 - **Linux (Bash):**	CentOS, Debian, Ubuntu, RedHat
@@ -38,7 +38,7 @@ The report will be presented in excel format
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | orgToken                | -t,  --orgToken                 | WSPR_ORG_TOKEN                 |          | WhiteSource application page >Home >Integrate tab >Organization >API Key |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| projectParallelismLevel | -m,  --projectParallelismLevel  | WSPR_PROJECT_PARALLELISM_LEVEL |    9     | Number of threads to run for the script API calls (max number = 20 )     |
+| projectParallelismLevel | -m,  --projectParallelismLevel  | WSPR_PROJECT_PARALLELISM_LEVEL |    9     | Number of threads to run API calls (max number = 20)                     |
 ====================================================================================================================================================================================
 ```
 ### Execution
@@ -49,12 +49,12 @@ The report will be presented in excel format
  `python ws_policy_report.py -c / --configFile <CONFIG_FILE>`
  
  Environment Variables:
- - A parameter name as defined in the configuration file converted to upper case with underscore (`_`) separators and **WSPR**_ prefix added.
- - For example the `fileName` parameter can be set using the `WSPR_FILE_NAME` environment variable.
- - In case an environment variable exists , it will overrun any value which exists for the matching parameter in the command line  / configuration file.
+ - A parameter name, as it is defined in the configuration file, is converted to upper case with underscore (`_`) separators, and **WSPR**_ prefix is added.
+ - For example, the `fileName` parameter can be set using the `WSPR_FILE_NAME` environment variable.
+ - In case an environment variable is existed, it will overrun any value which exists for the matching parameter in the command line/configuration file.
 
 ### Output
- An excel file in the following convention :
+ An Excel file in the following format:
  `policy_report_YYYY-MM-DD_hh-mm-ss.xlsx`
  
 ### Author
