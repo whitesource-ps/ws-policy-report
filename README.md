@@ -9,7 +9,7 @@
 The script enables retrieving all policies for each project in a single WhiteSource organization.
 
 ### What does the script do?
-For each project, the script pulls all project's policies, its parent product's policies, and the organization policies this project belongs to.
+For each project, the script fetches all project's policies, its parent product's policies, and the organization policies this project belongs to.
 In addition, it indicates whether a policy is enabled or disabled.
 The report will be presented in Excel format.
 
