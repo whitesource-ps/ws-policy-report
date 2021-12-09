@@ -9,9 +9,9 @@
 The script enables retrieving all policies for each project in a single WhiteSource organization.
 
 ### What does the script do?
-For each project, the script fetches all project's policies, its parent product's policies, and the organization policies this project belongs to.
+For each project, the script fetches all the project's policies, its parent product's policies, and the organization policies this project belongs to.
 In addition, it indicates whether a policy is enabled or disabled.
-The report will be presented in Excel format.
+The report will be created in Excel format.
 
 ### Supported Operating Systems
 - **Linux (Bash):**	CentOS, Debian, Ubuntu, RedHat
@@ -51,7 +51,7 @@ The report will be presented in Excel format.
  Environment Variables:
  - A parameter name, as it is defined in the configuration file, is converted to upper case with underscore (`_`) separators, and **WSPR**_ prefix is added.
  - For example, the `fileName` parameter can be set using the `WSPR_FILE_NAME` environment variable.
- - In case an environment variable exists, it will overrun any value which is defined for the matching parameter in the command line/configuration file.
+ - If an environment variable exists, it will overwrite any value that is defined for the matching parameter in the command line/configuration file.
 
 ### Output
  An Excel file in the following format:
