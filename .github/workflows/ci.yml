@@ -16,8 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 #      - uses: UnicornGlobal/trufflehog-actions-scan@master
-        with:
-          branch: ${{ github.head_ref }}
+#        with:
+#          branch: ${{ github.head_ref }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -54,15 +54,15 @@ jobs:
           allowUpdates: true
           artifacts: "*.zip"
       - name: confluence-markdown-sync
-        uses: cupcakearmy/confluence-markdown-sync@v1
+        uses: cupcakearmy/confluence-markdown-sync@v1.0.1
         with:
           from: README.md
           to: 2323644446
           cloud: whitesource
-          user: ${{ secrets.CONFLUENCE_USER }}
-          token: ${{ secrets.CONFLUENCE_TOKEN }}
+          user: ${{ secrets.TEST_CONFLUENCE_USER }}
+          token: ${{ secrets.TEST_CONFLUENCE_TOKEN }}
       - name: confluence-markdown-sync
-        uses: cupcakearmy/confluence-markdown-sync@v1
+        uses: cupcakearmy/confluence-markdown-sync@v1.0.1
         with:
           from: README.md
           to: 2352447607
