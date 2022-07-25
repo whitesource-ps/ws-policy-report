@@ -4,6 +4,9 @@ on:
     branches:
       - '**'
       - '!master'
+      - '!ws-iac-scan-results/**'
+      - '!whitesource-remediate/master-all**'
+      - '!whitesource/migrate-configuration**'
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
